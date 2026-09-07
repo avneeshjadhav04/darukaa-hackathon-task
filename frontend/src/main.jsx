@@ -10,6 +10,8 @@ class ErrorBoundary extends Component {
   }
   render() {
     if (this.state.error) {
+      const splash = document.getElementById('splash');
+      if (splash) splash.remove();
       return (
         <div style={{
           minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -43,6 +45,13 @@ class ErrorBoundary extends Component {
   }
 }
 
+function dismissSplash() {
+  const el = document.getElementById('splash');
+  if (!el) return;
+  el.classList.add('hide');
+  setTimeout(() => el.remove(), 350);
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
@@ -50,3 +59,6 @@ createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// React has rendered — fade the splash out (covers bundle-parse + first-mount gap)
+requestAnimationFrame(() => requestAnimationFrame(dismissSplash));
