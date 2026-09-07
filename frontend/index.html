@@ -32,6 +32,10 @@
       #splash .splash-dots i:nth-child(2) { animation-delay: .15s; }
       #splash .splash-dots i:nth-child(3) { animation-delay: .3s; }
       @keyframes splash-blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+      @media (max-width: 380px) {
+        #splash .splash-title { font-size: 16px; }
+        #splash .splash-leaf svg { width: 17px; height: 17px; }
+      }
     </style>
   </head>
   <body>

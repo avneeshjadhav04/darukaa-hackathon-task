@@ -14,6 +14,7 @@ export default function App() {
   const [indexRefresh, setIndexRefresh] = useState(0);
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [autofetch, setAutofetch] = useState(loadAutofetchPref);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const toastTimer = useRef(null);
 
   const showToast = useCallback((msg, isErr = false) => {
@@ -34,7 +35,7 @@ export default function App() {
   const providersReady = llmReady;   // chat requires LLM; embeddings optional (works without index)
 
   return (
-    <div className="app">
+    <div className={'app' + (sidebarOpen ? ' sidebar-open' : '')}>
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true" />
@@ -96,7 +97,10 @@ export default function App() {
         </Section>
       </aside>
 
-      <ChatWindow providersReady={providersReady} onToast={showToast} refreshKey={historyRefresh} autofetch={autofetch} />
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
+
+      <ChatWindow providersReady={providersReady} onToast={showToast} refreshKey={historyRefresh}
+                  autofetch={autofetch} onMenuClick={() => setSidebarOpen(true)} />
 
       {toast && (
         <div className={'toast' + (toast.isErr ? ' err' : '')}>

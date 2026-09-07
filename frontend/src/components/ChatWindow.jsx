@@ -1,4 +1,4 @@
-import { Eraser, Leaf, User } from 'lucide-react';
+import { Eraser, Leaf, Menu, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, loadProviderFields, streamChat } from '../api/client';
 import Composer from './Composer';
@@ -11,7 +11,7 @@ const SUGGESTIONS = [
   'My monoculture wheat yields are falling',
 ];
 
-export default function ChatWindow({ providersReady, onToast, refreshKey, autofetch = true }) {
+export default function ChatWindow({ providersReady, onToast, refreshKey, autofetch = true, onMenuClick }) {
   const [messages, setMessages] = useState([]);
   const [slots, setSlots] = useState({});
   const [busy, setBusy] = useState(false);
@@ -110,6 +110,9 @@ export default function ChatWindow({ providersReady, onToast, refreshKey, autofe
   return (
     <div className="main">
       <div className="chat-head">
+        <button className="menu-btn" aria-label="Open menu" onClick={onMenuClick}>
+          <Menu size={18} />
+        </button>
         <div className="title">
           <span className={'dot' + (providersReady ? ' on' : '')} />
           Biodiversity Intelligence
