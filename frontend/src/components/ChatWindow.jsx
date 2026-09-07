@@ -1,14 +1,21 @@
-import { Eraser } from 'lucide-react';
+import { Eraser, Leaf, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, loadProviderFields, streamChat } from '../api/client';
 import Composer from './Composer';
 import RecCard from './RecCard';
 
+const SUGGESTIONS = [
+  'Biodiversity is declining on my land',
+  'How do I raise soil carbon in a dry field?',
+  'My monoculture wheat yields are falling',
+];
+
 export default function ChatWindow({ providersReady, onToast, refreshKey }) {
-  const [messages, setMessages] = useState([]);   // {role, content, structured}
+  const [messages, setMessages] = useState([]);
   const [slots, setSlots] = useState({});
   const [busy, setBusy] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [prompt, setPrompt] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -50,7 +57,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
         onError: (err) => {
           setBusy(false);
           setStreamingText('');
-          setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${err}`, structured: { error: true } }]);
+          setMessages((m) => [...m, { role: 'assistant', content: err, structured: { error: true } }]);
           onToast?.(err, true);
         },
       },
@@ -73,7 +80,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
         <div className="title">
           <span className={'dot' + (providersReady ? ' on' : '')} />
           Biodiversity Intelligence
-          {known > 0 && <span className="badge ok">{known} context vars known</span>}
+          {known > 0 && <span className="chip green">{known} context vars</span>}
         </div>
         <button className="btn sm ghost" onClick={clearAll}>
           <Eraser size={13} /> Clear chat
@@ -83,26 +90,35 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
       <div className="transcript">
         {messages.length === 0 && !busy && (
           <div className="empty-state">
-            <b>AI Environmental Scientist</b><br />
-            Describe a biodiversity problem on your land, paste soil/climate metrics,
-            or send structured JSON. The system will ask for any missing variables it needs
-            (it reasons across ≥3), then produce evidence-backed recommendations with citations
-            from your knowledge base.
+            <div className="hero-tile"><Leaf size={34} /></div>
+            <div>
+              <h2>AI Environmental Scientist</h2>
+              <p className="sub">
+                Describe a biodiversity problem, paste soil &amp; climate metrics, or send structured JSON.
+                The system gathers what it needs, reasons across ≥3 variables, and returns
+                evidence-backed, quantified recommendations with citations.
+              </p>
+            </div>
+            <div className="suggest">
+              {SUGGESTIONS.map((s) => (
+                <button key={s} onClick={() => setPrompt(s)}>{s}</button>
+              ))}
+            </div>
           </div>
         )}
 
         {messages.map((m, i) => (
           <div key={i} className={'msg ' + m.role}>
+            <div className="avatar">{m.role === 'user' ? <User size={16} /> : <Leaf size={16} />}</div>
             <div className="bubble">
+              {m.role === 'assistant' && m.structured?.error && <b>⚠️ </b>}
               {m.content}
-              {m.role === 'assistant' && m.structured?.analysis && (
-                <AnalysisBlock data={m.structured} />
-              )}
+              {m.role === 'assistant' && m.structured?.analysis && <AnalysisBlock data={m.structured} />}
               {m.role === 'assistant' && m.structured?.recommendations && (
                 <div>{m.structured.recommendations.map((r, j) => <RecCard key={j} rec={r} />)}</div>
               )}
-              {m.structured?.kind === 'clarify' && m.structured?.questions && (
-                <div className="meta">Awaiting your answers to proceed ({m.structured.known}/{m.structured.needed} vars known).</div>
+              {m.role === 'assistant' && m.structured?.kind === 'clarify' && m.structured?.questions && (
+                <div className="meta">Awaiting your answers ({m.structured.known}/{m.structured.needed} vars known).</div>
               )}
             </div>
           </div>
@@ -110,15 +126,18 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
 
         {busy && (
           <div className="msg assistant">
+            <div className="avatar"><Leaf size={16} /></div>
             <div className="bubble">
-              {streamingText ? streamingText : <span className="typing"><i /><i /><i /></span>}
+              {streamingText
+                ? <>{streamingText}<span className="stream-cursor" /></>
+                : <span className="typing"><i /><i /><i /></span>}
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      <Composer disabled={!providersReady || busy} onSend={send} />
+      <Composer disabled={!providersReady || busy} onSend={send} initialPrompt={prompt} />
     </div>
   );
 }
@@ -126,11 +145,23 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
 function AnalysisBlock({ data }) {
   const a = data.analysis;
   return (
-    <div className="rec-card" style={{ borderLeftColor: 'var(--warn)' }}>
-      <div className="row"><b>Connects:</b> {a.variables_connected.join(' ↔ ')}</div>
+    <div className="rec-card rec-analysis">
+      <div className="conn">
+        {a.variables_connected?.map((v, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span className="conn-var">{v}</span>
+            {i < a.variables_connected.length - 1 && <span style={{ color: 'var(--warn)' }}>↔</span>}
+          </span>
+        ))}
+      </div>
       <div className="row">{a.causal_chain}</div>
       {a.clarifying_notes && <div className="row"><b>Notes:</b> {a.clarifying_notes}</div>}
-      {data.overall_confidence && <div className="src-line">Overall confidence: {data.overall_confidence}</div>}
+      {data.overall_confidence && (
+        <div className="src-line">
+          <span>Overall confidence:</span>
+          <span className="src-chip">{data.overall_confidence}</span>
+        </div>
+      )}
     </div>
   );
 }

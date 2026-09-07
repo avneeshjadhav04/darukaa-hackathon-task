@@ -1,4 +1,4 @@
-import { Database, Globe, Leaf, Settings } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Database, Globe, Leaf, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { api } from './api/client';
@@ -36,8 +36,11 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <h1><Leaf size={15} style={{ verticalAlign: -2 }} /> AI Environmental Scientist</h1>
-          <p>Darukaa.Earth biodiversity intelligence</p>
+          <div className="brand-tile"><Leaf size={21} /></div>
+          <div>
+            <h1 className="grad">AI Environmental Scientist</h1>
+            <p>Darukaa.Earth · biodiversity intelligence</p>
+          </div>
         </div>
 
         <Section title="Ingest Documents" icon={Database}
@@ -81,7 +84,11 @@ export default function App() {
       <ChatWindow providersReady={providersReady} onToast={showToast} refreshKey={historyRefresh} />
 
       {toast && (
-        <div className={'toast' + (toast.isErr ? ' err' : '')}>{toast.msg}</div>
+        <div className={'toast' + (toast.isErr ? ' err' : '')}>
+          {toast.isErr ? <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 1 }} />
+                        : <CheckCircle2 size={15} style={{ color: 'var(--ok)', flexShrink: 0, marginTop: 1 }} />}
+          <span>{toast.msg}</span>
+        </div>
       )}
     </div>
   );

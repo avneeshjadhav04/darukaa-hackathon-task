@@ -1,7 +1,7 @@
 import { Braces, MapPin, SendHorizonal } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function Composer({ disabled, onSend }) {
+export default function Composer({ disabled, onSend, initialPrompt }) {
   const [text, setText] = useState('');
   const [showStructured, setShowStructured] = useState(false);
   const [showGeo, setShowGeo] = useState(false);
@@ -13,6 +13,11 @@ export default function Composer({ disabled, onSend }) {
   }, null, 2));
   const [lat, setLat] = useState('');
   const [lon, setLon] = useState('');
+
+  // consume a suggestion prompt if the parent hands one down
+  useEffect(() => {
+    if (initialPrompt) setText(initialPrompt);
+  }, [initialPrompt]);
 
   function send() {
     if (!text.trim() && !showStructured) return;
@@ -29,22 +34,11 @@ export default function Composer({ disabled, onSend }) {
 
   return (
     <div className="composer">
-      <div className="toggles">
-        <label>
-          <input type="checkbox" checked={showStructured} onChange={(e) => setShowStructured(e.target.checked)} />
-          <Braces size={13} /> structured input (JSON)
-        </label>
-        <label>
-          <input type="checkbox" checked={showGeo} onChange={(e) => setShowGeo(e.target.checked)} />
-          <MapPin size={13} /> geo context
-        </label>
-      </div>
-
       {showStructured && (
         <div className="details-panel">
           <textarea value={structured} onChange={(e) => setStructured(e.target.value)} spellCheck={false} />
-          <div className="hint" style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 4 }}>
-            JSON object of environmental variables, e.g. soil_organic_carbon_pct, rainfall, land_use, crop, region…
+          <div className="hint" style={{ marginTop: 5 }}>
+            JSON object of environmental variables — soil_organic_carbon_pct, rainfall, land_use, crop, region…
           </div>
         </div>
       )}
@@ -62,15 +56,28 @@ export default function Composer({ disabled, onSend }) {
       )}
 
       <div className="row">
-        <textarea
-          placeholder={disabled ? 'Configure providers in the sidebar to start…' : 'Describe your land problem, or paste metrics…'}
-          value={text}
-          disabled={disabled}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-        />
-        <button className="btn" onClick={send} disabled={disabled || (!text.trim() && !showStructured)}>
-          <SendHorizonal size={15} /> Send
+        <div className="composer-box">
+          <textarea
+            placeholder={disabled ? 'Configure providers in the sidebar to start…' : 'Describe your land problem, or paste metrics…'}
+            value={text}
+            disabled={disabled}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          />
+          <div className="toggles">
+            <label className={'toggle-chip' + (showStructured ? ' active' : '')}>
+              <input type="checkbox" checked={showStructured} onChange={(e) => setShowStructured(e.target.checked)} />
+              <Braces size={13} /> structured
+            </label>
+            <label className={'toggle-chip' + (showGeo ? ' active' : '')}>
+              <input type="checkbox" checked={showGeo} onChange={(e) => setShowGeo(e.target.checked)} />
+              <MapPin size={13} /> geo
+            </label>
+          </div>
+        </div>
+        <button className="send-btn" onClick={send} disabled={disabled || (!text.trim() && !showStructured)}
+                title="Send">
+          <SendHorizonal size={19} />
         </button>
       </div>
     </div>

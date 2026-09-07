@@ -1,4 +1,4 @@
-import { FileUp, Link2, RotateCcw, Trash2 } from 'lucide-react';
+import { FileUp, FileText, Link2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, loadProviderFields } from '../api/client';
 
@@ -96,8 +96,8 @@ export default function IngestPanel({ onToast, onIndexChanged, refreshKey }) {
           if (f) doFile(f);
         }}
       >
-        <FileUp size={18} style={{ display: 'block', margin: '0 auto 6px' }} />
-        {busy ? 'Working…' : 'Drop PDF/TXT/MD here, or click to choose'}
+        <span className="upload-ic"><FileUp size={18} /></span>
+        <span>{busy ? 'Working…' : 'Drop PDF / TXT / MD here, or click to choose'}</span>
         <input
           ref={fileRef} type="file" accept=".pdf,.txt,.md" hidden
           onChange={(e) => doFile(e.target.files?.[0])}
@@ -126,6 +126,7 @@ export default function IngestPanel({ onToast, onIndexChanged, refreshKey }) {
         <ul className="doc-list">
           {docs.map((d) => (
             <li key={d.name}>
+              <span className="file-ic"><FileText size={14} /></span>
               <span className="name" title={d.source}>{d.name}</span>
               <span className="meta">{d.kind} · {d.chunks} chunks</span>
               <button title="delete" onClick={() => doDelete(d.name)}><Trash2 size={13} /></button>

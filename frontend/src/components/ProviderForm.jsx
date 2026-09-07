@@ -1,4 +1,4 @@
-import { CheckCircle2, KeyRound, XCircle } from 'lucide-react';
+import { Bot, CheckCircle2, Cpu, KeyRound, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, loadProviderFields, saveProviderFields } from '../api/client';
 
@@ -19,20 +19,18 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
   // Seed from env defaults when they arrive, and persist any values we filled
   // (so a refresh keeps them) — but never if the user already set them.
   useEffect(() => {
-    setForm((f) => {
-      const all = loadProviderFields();
-      const s = all[slot] || {};
-      const merged = {
-        provider_name: s.provider_name ?? env.provider_name ?? '',
-        base_url: s.base_url ?? env.base_url ?? '',
-        model_name: s.model_name ?? env.model_name ?? '',
-      };
-      if (!s.provider_name && env.provider_name) {
-        all[slot] = merged;
-        saveProviderFields(all);   // persist env-seeded non-secret defaults
-      }
-      return { ...merged, api_key: '' };
-    });
+    const all = loadProviderFields();
+    const s = all[slot] || {};
+    const merged = {
+      provider_name: s.provider_name ?? env.provider_name ?? '',
+      base_url: s.base_url ?? env.base_url ?? '',
+      model_name: s.model_name ?? env.model_name ?? '',
+    };
+    if (!s.provider_name && env.provider_name) {
+      all[slot] = merged;
+      saveProviderFields(all);   // persist env-seeded non-secret defaults
+    }
+    setForm({ ...merged, api_key: '' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.env_defaults?.provider_name, status?.env_defaults?.base_url, status?.env_defaults?.model_name]);
 
@@ -81,13 +79,17 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
   }
 
   const hasKey = status?.has_key;
+  const Icon = slot === 'llm' ? Bot : Cpu;
+  const keyPill = hasKey
+    ? <span className={'pill ' + (status.key_source === 'env' ? 'warn' : 'ok')}>
+        {status.key_source === 'env' ? 'env key' : status.key_tail}
+      </span>
+    : <span className="pill bad">no key</span>;
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <b style={{ fontSize: 12.5 }}>{title}</b>
-        {hasKey
-          ? <span className="badge ok">key set {status.key_source === 'env' ? '(env)' : status.key_tail}</span>
-          : <span className="badge bad">no key</span>}
+    <div className="provider-block">
+      <div className="head">
+        <b>{Icon}{title}</b>
+        {keyPill}
       </div>
 
       <div className="field">
@@ -103,7 +105,7 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
         <input value={form.model_name} onChange={set('model_name')} placeholder={slot === 'llm' ? 'gpt-4o-mini' : 'text-embedding-3-small'} />
       </div>
       <div className="field">
-        <label>API key {hasKey && <span style={{ color: 'var(--accent)' }}>({status.key_source}, {status.key_tail || 'set'})</span>}</label>
+        <label>API key {hasKey && <span style={{ color: 'var(--accent)' }}>({status.key_source})</span>}</label>
         <input
           type="password"
           value={form.api_key}
@@ -115,7 +117,7 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
       </div>
 
       <div className="row">
-        <button className="btn sm flex" onClick={() => saveAndTest(false)} disabled={testing}>
+        <button className="btn sm primary flex" onClick={() => saveAndTest(false)} disabled={testing}>
           <KeyRound size={13} /> Save & Test
         </button>
         <button className="btn sm ghost" onClick={forgetKey} disabled={!hasKey}>
@@ -124,11 +126,11 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
       </div>
 
       {testResult && (
-        <div className="inline-status" style={{ color: testResult.ok ? 'var(--ok)' : 'var(--danger)', display: 'flex', gap: 6, alignItems: 'center' }}>
+        <div className="inline-status" style={{ color: testResult.ok ? 'var(--ok)' : 'var(--danger)' }}>
           {testResult.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
           <span>
             {testResult.ok
-              ? `Connected${testResult.embedding_dim ? ` — embedding dim ${testResult.embedding_dim}` : ''}`
+              ? `Connected${testResult.embedding_dim ? ` · embedding dim ${testResult.embedding_dim}` : ''}`
               : `Failed: ${testResult.error || 'unknown error'}`}
           </span>
         </div>
@@ -136,7 +138,6 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
       <div className="small-note">
         Fallback env vars: <code>{slot === 'llm' ? 'LLM_PROVIDER_*' : 'EMBEDDING_PROVIDER_*'}</code>
       </div>
-      {slot === 'embedding' && <hr className="hr" style={{ marginTop: 14 }} />}
     </div>
   );
 }
