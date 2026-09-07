@@ -7,26 +7,31 @@ import { api, loadProviderFields, saveProviderFields } from '../api/client';
 export default function ProviderForm({ slot, title, status, onChanged, onToast }) {
   const saved = loadProviderFields()[slot] || {};
   const env = status?.env_defaults || {};
-  const [form, setForm] = useState({
+  const init = {
     provider_name: saved.provider_name ?? env.provider_name ?? '',
     base_url: saved.base_url ?? env.base_url ?? '',
     model_name: saved.model_name ?? env.model_name ?? '',
-    api_key: '',
-  });
+  };
+  const [form, setForm] = useState({ ...init, api_key: '' });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
-  // Re-seed from env defaults once status loads (first mount)
+  // Seed from env defaults when they arrive, and persist any values we filled
+  // (so a refresh keeps them) — but never if the user already set them.
   useEffect(() => {
     setForm((f) => {
       const all = loadProviderFields();
       const s = all[slot] || {};
-      return {
+      const merged = {
         provider_name: s.provider_name ?? env.provider_name ?? '',
         base_url: s.base_url ?? env.base_url ?? '',
         model_name: s.model_name ?? env.model_name ?? '',
-        api_key: '',
       };
+      if (!s.provider_name && env.provider_name) {
+        all[slot] = merged;
+        saveProviderFields(all);   // persist env-seeded non-secret defaults
+      }
+      return { ...merged, api_key: '' };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.env_defaults?.provider_name, status?.env_defaults?.base_url, status?.env_defaults?.model_name]);
