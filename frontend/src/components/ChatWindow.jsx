@@ -2,6 +2,7 @@ import { Eraser, Leaf, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, loadProviderFields, streamChat } from '../api/client';
 import Composer from './Composer';
+import Markdown from './Markdown';
 import RecCard from './RecCard';
 
 const SUGGESTIONS = [
@@ -18,6 +19,9 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
   const [stage, setStage] = useState(null);
   const [prompt, setPrompt] = useState(null);
   const bottomRef = useRef(null);
+  const accRef = useRef('');
+  const flushTimer = useRef(null);
+  const dirtyRef = useRef(false);
 
   const STAGE_LABELS = {
     extracting: 'Extracting context variables…',
@@ -53,20 +57,35 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
     setStage(null);
     setMessages((m) => [...m, { role: 'user', content: message || '[payload]', structured: structured ? { preview: true } : null }]);
     setStreamingText('');
-    let acc = '';
+    accRef.current = '';
+    dirtyRef.current = false;
+    // flush accumulated deltas to state at most every 80ms — keeps markdown
+    // re-parsing off the hot path during fast token streams
+    const flush = () => {
+      flushTimer.current = null;
+      if (!dirtyRef.current) return;
+      dirtyRef.current = false;
+      setStreamingText(accRef.current);
+    };
     streamChat(
       { message, structured, lat, lon, ...providerPayload() },
       {
         onStatus: (s) => setStage(s),
-        onDelta: (t) => { acc += t; setStreamingText(acc); },
+        onDelta: (t) => {
+          accRef.current += t;
+          dirtyRef.current = true;
+          if (!flushTimer.current) flushTimer.current = setTimeout(flush, 80);
+        },
         onFinal: (evt) => {
+          if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
           setBusy(false);
           setStage(null);
           setStreamingText('');
-          setMessages((m) => [...m, { role: 'assistant', content: acc, structured: evt.kind === 'answer' ? evt.data : null }]);
+          setMessages((m) => [...m, { role: 'assistant', content: accRef.current, structured: evt.kind === 'answer' ? evt.data : null }]);
           if (evt.slots) setSlots(evt.slots);
         },
         onError: (err) => {
+          if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
           setBusy(false);
           setStage(null);
           setStreamingText('');
@@ -124,8 +143,11 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
           <div key={i} className={'msg ' + m.role}>
             <div className="avatar">{m.role === 'user' ? <User size={16} /> : <Leaf size={16} />}</div>
             <div className="bubble">
-              {m.role === 'assistant' && m.structured?.error && <b>⚠️ </b>}
-              {m.content}
+              {m.role === 'assistant' && m.structured?.error
+                ? <>{<b>⚠️ </b>}{m.content}</>
+                : m.role === 'assistant'
+                  ? <Markdown text={m.content} />
+                  : m.content}
               {m.role === 'assistant' && m.structured?.analysis && <AnalysisBlock data={m.structured} />}
               {m.role === 'assistant' && m.structured?.recommendations && (
                 <div>{m.structured.recommendations.map((r, j) => <RecCard key={j} rec={r} />)}</div>
@@ -142,7 +164,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
             <div className="avatar"><Leaf size={16} /></div>
             <div className="bubble">
               {streamingText
-                ? <>{streamingText}<span className="stream-cursor" /></>
+                ? <><Markdown text={streamingText} /><span className="stream-cursor" /></>
                 : <span className="stage-line"><span className="typing"><i /><i /><i /></span>{STAGE_LABELS[stage] || 'Thinking…'}</span>}
             </div>
           </div>
