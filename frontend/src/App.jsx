@@ -66,8 +66,7 @@ export default function App() {
         <Section title="Provider Config" icon={Settings}
                  badge={providersReady
                    ? <span className="badge ok">ready</span>
-                   : <span className="badge bad">setup</span>}
-                 defaultOpen={true}>
+                   : <span className="badge bad">setup</span>}>
           <ProviderForm slot="llm" title="LLM (chat)" status={status?.llm}
                         onChanged={refreshStatus} onToast={showToast} />
           <ProviderForm slot="embedding" title="Embeddings" status={status?.embedding}
