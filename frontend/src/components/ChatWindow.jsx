@@ -15,8 +15,17 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
   const [slots, setSlots] = useState({});
   const [busy, setBusy] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [stage, setStage] = useState(null);
   const [prompt, setPrompt] = useState(null);
   const bottomRef = useRef(null);
+
+  const STAGE_LABELS = {
+    extracting: 'Extracting context variables…',
+    clarifying: 'Formulating clarifying questions…',
+    retrieving: 'Retrieving evidence…',
+    reasoning: 'Reasoning across variables…',
+    structuring: 'Structuring recommendations…',
+  };
 
   useEffect(() => {
     (async () => {
@@ -41,21 +50,25 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
   function send({ message, structured, lat, lon }) {
     if (busy) return;
     setBusy(true);
+    setStage(null);
     setMessages((m) => [...m, { role: 'user', content: message || '[payload]', structured: structured ? { preview: true } : null }]);
     setStreamingText('');
     let acc = '';
     streamChat(
       { message, structured, lat, lon, ...providerPayload() },
       {
+        onStatus: (s) => setStage(s),
         onDelta: (t) => { acc += t; setStreamingText(acc); },
         onFinal: (evt) => {
           setBusy(false);
+          setStage(null);
           setStreamingText('');
           setMessages((m) => [...m, { role: 'assistant', content: acc, structured: evt.kind === 'answer' ? evt.data : null }]);
           if (evt.slots) setSlots(evt.slots);
         },
         onError: (err) => {
           setBusy(false);
+          setStage(null);
           setStreamingText('');
           setMessages((m) => [...m, { role: 'assistant', content: err, structured: { error: true } }]);
           onToast?.(err, true);
@@ -130,7 +143,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
             <div className="bubble">
               {streamingText
                 ? <>{streamingText}<span className="stream-cursor" /></>
-                : <span className="typing"><i /><i /><i /></span>}
+                : <span className="stage-line"><span className="typing"><i /><i /><i /></span>{STAGE_LABELS[stage] || 'Thinking…'}</span>}
             </div>
           </div>
         )}

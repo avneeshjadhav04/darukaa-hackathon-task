@@ -253,6 +253,7 @@ button.btn.sm { padding: 5px 10px; font-size: 10.5px; }
 .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
 .typing i:nth-child(2) { animation-delay: .15s; }
 .typing i:nth-child(3) { animation-delay: .3s; }
+.stage-line { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
 @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
 
 /* scrollbar */

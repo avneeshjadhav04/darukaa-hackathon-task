@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import queue
-import threading
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -56,49 +54,38 @@ def _sse(obj: dict) -> str:
 
 
 @router.post("/stream")
-def chat_stream(body: ChatIn):
+async def chat_stream(body: ChatIn):
     lp, key_source, store = _providers_or_400(body)
     llm = get_llm(lp, streaming=True)
 
     db.add_message("user", body.message, structured={"structured": body.structured,
                                                      "lat": body.lat, "lon": body.lon})
 
-    def gen():
+    async def gen():
         yield _sse({"type": "start"})
+        result = None
         try:
-            result = None
-            chunk_q: "queue.Queue" = queue.Queue()
-
-            def work():
-                try:
-                    r = chat_engine.process_turn(
-                        llm=llm, store=store, message=body.message,
-                        structured=body.structured, lat=body.lat, lon=body.lon)
-                    chunk_q.put(("done", r))
-                except Exception as e:  # noqa: BLE001
-                    chunk_q.put(("error", e))
-
-            t = threading.Thread(target=work, daemon=True)
-            t.start()
-
-            while True:
-                kind, payload = chunk_q.get()
-                if kind == "done":
+            async for kind, payload in chat_engine.process_turn_stream(
+                    llm=llm, store=store, message=body.message,
+                    structured=body.structured, lat=body.lat, lon=body.lon):
+                if kind == "status":
+                    yield _sse({"type": "status", "stage": payload})
+                elif kind == "delta":
+                    yield _sse({"type": "delta", "text": payload})
+                elif kind == "final":
                     result = payload
                     break
-                raise payload
+            if result is None:
+                raise RuntimeError("turn produced no final event")
 
             # Record assistant message
             structured = result.get("data") if result["kind"] == "answer" else {
                 "kind": "clarify", **(result.get("data") or {})}
             db.add_message("assistant", result["content"], structured=structured)
 
-            # Stream the final content token-ish (sentence chunks keep it simple + robust)
-            for chunk in result["content"].split("\n"):
-                if chunk:
-                    yield _sse({"type": "delta", "text": chunk + "\n"})
             yield _sse({"type": "final", "kind": result["kind"],
-                        "data": result.get("data"), "slots": result.get("slots")})
+                        "data": result.get("data"), "slots": result.get("slots"),
+                        "parse_error": result.get("parse_error")})
         except Exception as e:  # noqa: BLE001
             yield _sse({"type": "error", "error": str(e)[:500]})
 

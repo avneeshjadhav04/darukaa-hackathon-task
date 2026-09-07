@@ -95,6 +95,21 @@ def main():
          "soil_ph": "", "soil_moisture": "", "rainfall": "", "temperature": "",
          "land_use": "", "crop": "", "habitat_type": "",
          "biodiversity_indicator": "", "human_impact": "", "water_availability": ""},
+        # streamed narrative (phase 1) — what the LLM would emit token-by-token
+        "Analysis: Continuous wheat on 0.3% SOC under low rainfall links soil organic "
+        "carbon, rainfall, land use and biodiversity in one causal chain: low SOC "
+        "degrades structure and microbial biomass, monoculture removes pollinator "
+        "forage, and low rainfall prevents recovery.\n"
+        "Recommendations:\n"
+        "1. Shift to pigeonpea–wheat rotation with hedgerow strips\n"
+        "   Why: Legume N-fixation + residue raise SOC; hedgerows add habitat "
+        "connectivity and pollinator forage.\n"
+        "   Improves: soil organic carbon, pollinator diversity — SOC +15–25% over "
+        "2–3 years; pollinators +50–70%\n"
+        "   Horizon: medium | Confidence: high\n"
+        "   Sources: FAO (2017) VGSSM, structured_facts\n"
+        "Overall confidence: high",
+        # structured post-pass (phase 2) — validated against ScientistResponse
         {
             "analysis": {
                 "variables_connected": ["soil organic carbon", "rainfall", "land use", "biodiversity"],
@@ -119,13 +134,17 @@ def main():
                     "crop": "monoculture wheat", "region": "semi-arid"})
     assert r2["kind"] == "answer", f"expected answer, got {r2['kind']}"
     data = r2["data"]
+    assert data, "structured payload missing (post-pass failed)"
     assert len(data["analysis"]["variables_connected"]) >= 3, "must connect >=3 vars"
     assert data["recommendations"][0]["quantified_estimate"], "needs numeric estimate"
     assert data["recommendations"][0]["sources"], "needs citations"
+    assert "Recommendations:" in r2["content"], "streamed narrative should be in content"
     print("✓ turn-2 answer produced: connects", len(data["analysis"]["variables_connected"]),
           "vars,", len(data["recommendations"]), "recommendations, sources:", data["recommendations"][0]["sources"])
-    print("\n--- rendered answer ---\n")
+    print("\n--- streamed narrative (content) ---\n")
     print(r2["content"])
+    print("\n--- structured payload (rec cards) ---")
+    print(json.dumps(data["analysis"], indent=2))
     print("\n=== mock pipeline OK ===")
 
 

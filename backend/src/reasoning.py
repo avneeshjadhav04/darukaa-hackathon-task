@@ -67,6 +67,46 @@ def build_chain(llm):
     return _PROMPT | llm.with_structured_output(ScientistResponse)
 
 
+# ---------- streaming narrative chain (phase 1 of two-phase answering) ----------
+# Streams the answer as readable prose token-by-token; the structured
+# ScientistResponse for the rec cards is produced afterwards by a post-pass
+# over this narrative (see chat.process_turn_stream).
+
+_STREAM_SYSTEM = (
+    "You are an applied environmental scientist advising on biodiversity recovery. "
+    "Reason ACROSS variables — never give single-variable advice. Ground every claim "
+    "in the retrieved context. Cite specific sources from the context; if context is "
+    "insufficient, say so rather than inventing citations. Numbers must come from the "
+    "context or be clearly labelled as estimates with the mechanism stated.\n\n"
+    "Write your answer as plain readable text (markdown-lite; no JSON, no code fences) "
+    "in exactly this structure:\n"
+    "Analysis: <one paragraph naming >=3 environmental variables and the causal chain "
+    "linking them (A→B→C)>\n"
+    "Recommendations:\n"
+    "1. <specific intervention>\n"
+    "   Why: <scientific mechanism>\n"
+    "   Improves: <comma-separated impacted metrics> — <quantified estimate with "
+    "magnitude + timeframe, e.g. 'SOC +0.4–0.6% over 3–5 years'>\n"
+    "   Horizon: short|medium|long | Confidence: low|medium|high\n"
+    "   Sources: <comma-separated citations from the retrieved context>\n"
+    "(repeat for 1-3 recommendations)\n"
+    "Overall confidence: low|medium|high\n\n"
+    "Known land/soil/climate context (slots collected so far):\n{slots}\n\n"
+    "Retrieved evidence:\n{context}\n\n"
+    "Conversation memory (recent turns):\n{history}"
+)
+
+_STREAM_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", _STREAM_SYSTEM),
+    ("human", "{question}"),
+])
+
+
+def build_stream_chain(llm):
+    """Plain (non-structured) chain whose output can be streamed token-by-token."""
+    return _STREAM_PROMPT | llm
+
+
 def format_slots(slots: dict) -> str:
     known = {k: v for k, v in slots.items() if v not in ("", None)}
     if not known:

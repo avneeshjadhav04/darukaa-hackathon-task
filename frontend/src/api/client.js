@@ -76,7 +76,7 @@ export const api = {
 
 // ---------- SSE chat ----------
 export function streamChat({ message, structured, lat, lon, llm, embedding },
-                           { onStart, onDelta, onFinal, onError, signal }) {
+                           { onStart, onStatus, onDelta, onFinal, onError, signal }) {
   const ctrl = new AbortController();
   const outerSignal = signal;
   if (outerSignal) outerSignal.addEventListener('abort', () => ctrl.abort());
@@ -111,6 +111,7 @@ export function streamChat({ message, structured, lat, lon, llm, embedding },
             let evt;
             try { evt = JSON.parse(frame.slice(6)); } catch { continue; }
             if (evt.type === 'start') onStart?.();
+            else if (evt.type === 'status') onStatus?.(evt.stage);
             else if (evt.type === 'delta') onDelta?.(evt.text);
             else if (evt.type === 'final') onFinal?.(evt);
             else if (evt.type === 'error') onError?.(evt.error);

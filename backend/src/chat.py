@@ -1,22 +1,29 @@
 """Chat engine: slot extraction, clarifying questions, retrieval, answer.
 
-Flow per turn:
+Flow per turn (process_turn_stream, an async generator of events):
   1) extract environmental variable 'slots' from the message (+ prior history)
   2) if < MIN_VARS_FOR_ANSWER key variables are known -> ask targeted clarifications
-  3) else -> retrieve relevant evidence -> run the reasoning chain -> respond
+  3) else -> retrieve relevant evidence -> stream the answer as narrative prose
+     token-by-token -> structured post-pass builds the rec-card payload
+
+Events yielded (kind, payload):
+  ("status", stage)   stage in extracting|clarifying|retrieving|reasoning|structuring
+  ("delta", text)     incremental answer text
+  ("final", result)   {kind, content, data?, slots, parse_error?}
 
 Slots and messages persist in SQLite so the thread survives browser refresh.
 """
 from __future__ import annotations
 
+import asyncio
 import json
-from typing import Literal
 
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
 from . import db
-from .reasoning import build_chain, format_history, format_slots
+from .reasoning import (build_chain, build_stream_chain, format_history,
+                        format_slots)
 
 # Slot vocabulary — the variables the system tracks across the conversation.
 SLOTS = [
@@ -141,7 +148,25 @@ def _apply_geo(slots: dict, lat: float | None, lon: float | None) -> dict:
 def process_turn(*, llm, store, message: str,
                  structured: dict | None = None,
                  lat: float | None = None, lon: float | None = None) -> dict:
-    """Process one user turn. Returns {kind, content, data?, slots}."""
+    """Sync convenience wrapper: consume process_turn_stream, return the final event."""
+    async def _run():
+        result = None
+        async for _kind, payload in process_turn_stream(
+                llm=llm, store=store, message=message,
+                structured=structured, lat=lat, lon=lon):
+            if _kind == "final":
+                result = payload
+        if result is None:
+            raise RuntimeError("turn produced no final event")
+        return result
+
+    return asyncio.run(_run())
+
+
+async def process_turn_stream(*, llm, store, message: str,
+                              structured: dict | None = None,
+                              lat: float | None = None, lon: float | None = None):
+    """Async generator: process one user turn, yielding events."""
     slots = load_slots()
     slots = _apply_structured_input(slots, structured)
     slots = _apply_geo(slots, lat, lon)
@@ -154,71 +179,83 @@ def process_turn(*, llm, store, message: str,
         q += f"\n[geo] lat={lat}, lon={lon}"
 
     # 1) extraction
+    yield "status", "extracting"
     extractor = _EXTRACTION_PROMPT | llm.with_structured_output(Extracted)
-    new_vals = extractor.invoke({"history": format_history(history), "message": q}).model_dump()
-    slots, changed = merge_slots(slots, new_vals)
+    extracted = await extractor.ainvoke({"history": format_history(history), "message": q})
+    slots, changed = merge_slots(slots, extracted.model_dump())
 
     # 2) gate on variable count
     n = known_count(slots)
     if n < MIN_VARS_FOR_ANSWER:
         save_slots(slots)
+        yield "status", "clarifying"
         clarifier = _CLARIFY_PROMPT | llm.with_structured_output(Clarify)
         missing = missing_key_slots(slots) or ["any 3 of: region, land_use, soil, rainfall"]
-        out = clarifier.invoke({
+        out = await clarifier.ainvoke({
             "missing": ", ".join(missing),
             "slots": format_slots(slots),
             "message": q,
         })
-        return {
+        content = "\n".join(f"• {qq}" for qq in out.questions)
+        for line in content.split("\n"):
+            yield "delta", line + "\n"
+        yield "final", {
             "kind": "clarify",
-            "content": "\n".join(f"• {qq}" for qq in out.questions),
+            "content": content,
             "data": {"questions": out.questions, "known": n, "needed": MIN_VARS_FOR_ANSWER},
             "slots": slots,
         }
+        return
 
     # 3) retrieve + reason
     save_slots(slots)
     query = message + " " + " ".join(f"{k}={v}" for k, v in slots.items() if v)
-    docs = store.similarity_search(query, k=6)
+    yield "status", "retrieving"
+    docs = await asyncio.to_thread(store.similarity_search, query, 6) if store else []
     context = "\n\n---\n\n".join(
         f"source: {d.metadata.get('source_name','?')}\n{d.page_content}" for d in docs
     )
 
-    chain = build_chain(llm)
-    resp = chain.invoke({
+    # 3a) stream the narrative answer token-by-token
+    yield "status", "reasoning"
+    stream_chain = build_stream_chain(llm)
+    parts: list[str] = []
+    async for chunk in stream_chain.astream({
         "slots": format_slots(slots),
         "context": context or "(no documents indexed yet — answer from general scientific knowledge and flag the gap)",
         "history": format_history(history),
         "question": q,
-    })
-    payload = resp.model_dump()
-    cited = sorted({d.metadata.get("source_name", "") for d in docs if d.metadata.get("source_name")})
-    payload["retrieved_sources"] = cited
+    }):
+        text = chunk.content if hasattr(chunk, "content") else str(chunk)
+        if text:
+            parts.append(text)
+            yield "delta", text
 
-    content = _render(resp)
-    return {
+    # 3b) structured post-pass for the rec-card payload
+    yield "status", "structuring"
+    narrative = "".join(parts)
+    data: dict | None = None
+    parse_error = ""
+    try:
+        chain = build_chain(llm)
+        resp = await chain.ainvoke({
+            "slots": format_slots(slots),
+            "context": context or "(no documents indexed yet — answer from general scientific knowledge and flag the gap)",
+            "history": format_history(history),
+            "question": q,
+        })
+        payload = resp.model_dump()
+        cited = sorted({d.metadata.get("source_name", "") for d in docs if d.metadata.get("source_name")})
+        payload["retrieved_sources"] = cited
+        data = payload
+    except Exception as e:  # noqa: BLE001 — degrade to text-only answer
+        parse_error = f"{type(e).__name__}: {e}"[:300]
+
+    content = narrative if not parse_error else narrative + f"\n\n[structured summary unavailable: {parse_error}]"
+    yield "final", {
         "kind": "answer",
         "content": content,
-        "data": payload,
+        "data": data,
+        "parse_error": parse_error or None,
         "slots": slots,
     }
-
-
-def _render(resp) -> str:
-    lines = []
-    a = resp.analysis
-    lines.append(f"Analysis: links {', '.join(a.variables_connected)}.")
-    lines.append(f"Causal chain: {a.causal_chain}")
-    if a.clarifying_notes:
-        lines.append(f"Notes: {a.clarifying_notes}")
-    lines.append("")
-    for i, r in enumerate(resp.recommendations, 1):
-        lines.append(
-            f"{i}. {r.action}\n"
-            f"   Why: {r.why}\n"
-            f"   Improves: {', '.join(r.impacted_metrics)} — {r.quantified_estimate}\n"
-            f"   Horizon: {r.time_horizon} | Confidence: {r.confidence}\n"
-            f"   Sources: {', '.join(r.sources)}"
-        )
-    lines.append(f"\nOverall confidence: {resp.overall_confidence}")
-    return "\n".join(lines)
