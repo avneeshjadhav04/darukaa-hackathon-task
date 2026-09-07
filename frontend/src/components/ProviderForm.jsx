@@ -1,4 +1,4 @@
-import { CheckCircle2, FlaskConical, KeyRound, XCircle } from 'lucide-react';
+import { CheckCircle2, KeyRound, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, loadProviderFields, saveProviderFields } from '../api/client';
 
