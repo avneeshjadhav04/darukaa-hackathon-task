@@ -45,11 +45,18 @@ class ErrorBoundary extends Component {
   }
 }
 
+// splash must stay visible at least this long, even on fast loads
+const MIN_SPLASH_MS = 1000;
+
 function dismissSplash() {
   const el = document.getElementById('splash');
   if (!el) return;
-  el.classList.add('hide');
-  setTimeout(() => el.remove(), 350);
+  const elapsed = performance.now() - (window.__splashShownAt || 0);
+  const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+  setTimeout(() => {
+    el.classList.add('hide');
+    setTimeout(() => el.remove(), 350);
+  }, wait);
 }
 
 createRoot(document.getElementById('root')).render(
