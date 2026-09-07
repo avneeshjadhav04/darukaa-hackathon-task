@@ -41,14 +41,14 @@ Requires **Docker** and, optionally, provider env vars (can also be set in the U
 
 ```bash
 docker build -t dbc .
-docker run -p 8000:8000 -v dbc_data:/app/data dbc
+docker run -p 8000:8000 dbc
 # open http://localhost:8000
 ```
 
 With providers pre-configured via environment:
 
 ```bash
-docker run -p 8000:8000 -v dbc_data:/app/data \
+docker run -p 8000:8000 \
   -e LLM_PROVIDER_NAME=openai \
   -e LLM_PROVIDER_BASE_URL=https://api.openai.com/v1 \
   -e LLM_PROVIDER_MODEL_NAME=gpt-4o-mini \
@@ -61,6 +61,16 @@ docker run -p 8000:8000 -v dbc_data:/app/data \
 ```
 
 `docker-compose up` works too (convenience only).
+
+### Deploy to Railway
+
+- Point a Railway service at this repo — it builds from the root `Dockerfile`.
+- Set the `*_PROVIDER_*` env vars in Railway (or configure providers in the UI post-boot).
+- The app honors Railway's assigned **`$PORT`** automatically and exposes it on `$PORT`.
+- **Storage note:** state (Chroma index + SQLite chat thread) lives in the container
+  filesystem at `/app/data` and is **ephemeral** — it resets on redeploy/restart by design.
+  The quantified knowledge base (`structured_facts.json`) ships inside the image and
+  auto-re-ingests on first upload/chat, so a fresh container is ready in one action.
 
 ### Provider config semantics
 - **UI-managed, memory-only keys.** API keys you enter in the sidebar live only in server

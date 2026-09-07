@@ -1,11 +1,10 @@
 # Convenience only — the single Dockerfile is sufficient on its own.
+# State is container-local (/app/data); it resets on redeploy/restart by design.
 services:
   app:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - app_data:/app/data
     environment:
       # Optional fallback secrets/config (UI-configured keys take precedence)
       - LLM_PROVIDER_NAME=${LLM_PROVIDER_NAME:-}
@@ -17,6 +16,3 @@ services:
       - EMBEDDING_PROVIDER_MODEL_NAME=${EMBEDDING_PROVIDER_MODEL_NAME:-}
       - EMBEDDING_PROVIDER_API_KEY=${EMBEDDING_PROVIDER_API_KEY:-}
     restart: unless-stopped
-
-volumes:
-  app_data:

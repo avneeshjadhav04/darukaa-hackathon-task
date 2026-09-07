@@ -18,14 +18,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Paths (resolved relative to repo root: backend/..)
-ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = ROOT / "data"
+# Paths
+# Local dev:  ROOT = repo root (this file is backend/src/settings.py -> 3 parents up)
+# Docker:     backend/ is copied to /app/ -> this file is /app/src/settings.py, which
+#             would wrongly resolve to "/". APP_ROOT env pins the app root explicitly.
+ROOT = Path(os.getenv("APP_ROOT", str(Path(__file__).resolve().parent.parent.parent))).resolve()
+DATA_DIR = Path(os.getenv("DATA_DIR", str(ROOT / "data")))
 CHROMA_DIR = DATA_DIR / "chroma"
 UPLOAD_DIR = DATA_DIR / "uploads"
-KNOWLEDGE_DIR = DATA_DIR / "knowledge"
-DB_PATH = DATA_DIR / "chat.db"
-STATIC_DIR = ROOT / "static"          # built frontend (Docker) — see frontend/dist for dev
+KNOWLEDGE_DIR = Path(os.getenv("KNOWLEDGE_DIR", str(DATA_DIR / "knowledge")))
+DB_PATH = Path(os.getenv("DB_PATH", str(DATA_DIR / "chat.db")))
+STATIC_DIR = ROOT / "static"          # built frontend (Docker)
 DIST_DIR = ROOT / "frontend" / "dist"  # dev convenience
 
 for _d in (DATA_DIR, CHROMA_DIR, UPLOAD_DIR, KNOWLEDGE_DIR):
