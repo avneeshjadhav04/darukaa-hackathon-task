@@ -90,7 +90,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
       <div className="transcript">
         {messages.length === 0 && !busy && (
           <div className="empty-state">
-            <div className="hero-tile"><Leaf size={34} /></div>
+            <div className="empty-mark"><Leaf size={18} /></div>
             <div>
               <h2>AI Environmental Scientist</h2>
               <p className="sub">

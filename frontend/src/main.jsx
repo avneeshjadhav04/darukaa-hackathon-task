@@ -13,14 +13,14 @@ class ErrorBoundary extends Component {
       return (
         <div style={{
           minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#080c0a', color: '#e9f0ea', fontFamily: 'Inter, system-ui, sans-serif',
+          background: '#ffffff', color: '#111111', fontFamily: 'Inter, system-ui, sans-serif',
           padding: 24,
         }}>
           <div style={{ maxWidth: 560, width: '100%' }}>
-            <h2 style={{ color: '#fb7185', marginTop: 0 }}>Something went wrong</h2>
+            <h2 style={{ color: '#c53030', marginTop: 0 }}>Something went wrong</h2>
             <pre style={{
-              background: '#111815', border: '1px solid #223028', borderRadius: 10,
-              padding: 14, fontSize: 12, overflow: 'auto', color: '#b9c6bc',
+              background: '#f7f7f4', border: '1px solid #e0e0da', padding: 14,
+              fontSize: 12, overflow: 'auto', color: '#4a4a4a',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
               {String(this.state.error?.message || this.state.error)}
@@ -29,8 +29,8 @@ class ErrorBoundary extends Component {
             <button
               onClick={() => location.reload()}
               style={{
-                marginTop: 12, background: '#34d399', color: '#06251b', border: 'none',
-                padding: '9px 16px', borderRadius: 10, fontWeight: 600, cursor: 'pointer',
+                marginTop: 12, background: '#0a7d42', color: '#fff', border: 'none',
+                padding: '9px 16px', fontWeight: 600, cursor: 'pointer',
               }}
             >
               Reload

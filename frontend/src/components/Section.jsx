@@ -5,17 +5,15 @@ export default function Section({ title, icon: Icon, badge, defaultOpen = false,
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={'section' + (open ? ' open' : '')}>
-      <div className="section-card">
-        <header onClick={() => setOpen(!open)}>
-          <span className="left">
-            <ChevronRight size={15} className="chev" />
-            {Icon && <span className="tile"><Icon size={14} /></span>}
-            <span>{title}</span>
-          </span>
-          {badge}
-        </header>
-        {open && <div className="body">{children}</div>}
-      </div>
+      <header onClick={() => setOpen(!open)}>
+        <span className="left">
+          <ChevronRight size={14} className="chev" />
+          {Icon && <span className="tile"><Icon size={14} /></span>}
+          <span>{title}</span>
+        </span>
+        {badge}
+      </header>
+      {open && <div className="body">{children}</div>}
     </div>
   );
 }

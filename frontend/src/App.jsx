@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Database, Globe, Leaf, Settings } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Database, Globe, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { api } from './api/client';
@@ -36,9 +36,9 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-tile"><Leaf size={21} /></div>
+          <div className="brand-mark" aria-hidden="true" />
           <div>
-            <h1 className="grad">AI Environmental Scientist</h1>
+            <h1>AI Environmental Scientist</h1>
             <p>Darukaa.Earth · biodiversity intelligence</p>
           </div>
         </div>
