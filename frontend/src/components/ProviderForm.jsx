@@ -88,7 +88,7 @@ export default function ProviderForm({ slot, title, status, onChanged, onToast }
   return (
     <div className="provider-block">
       <div className="head">
-        <b>{Icon}{title}</b>
+        <b>{Icon && <Icon size={14} style={{ verticalAlign: -2 }} />}{title}</b>
         {keyPill}
       </div>
 
