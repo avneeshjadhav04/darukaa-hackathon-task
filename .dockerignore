@@ -1,0 +1,18 @@
+# Build context artifacts to exclude
+**/node_modules
+**/dist
+**/__pycache__
+**/.venv
+**/.pytest_cache
+.git
+.env
+.env.local
+Reference Data/
+data/chroma/
+data/chat.db
+data/uploads/
+*.log
+.vscode/
+.dockerignore
+docker-compose.yml
+README.md
