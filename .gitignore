@@ -1,0 +1,27 @@
+# Challenge reference data — do not commit
+Reference Data/
+
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# App data (persistent volumes)
+data/chroma/
+data/chat.db
+data/uploads/
+
+# OS / editor / logs
+.DS_Store
+*.log
