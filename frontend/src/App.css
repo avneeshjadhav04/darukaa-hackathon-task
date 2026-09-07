@@ -206,6 +206,18 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-si
 .details-panel .geo { display: flex; gap: 10px; }
 .details-panel .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
+/* sidebar preference row (auto-fetch toggle) */
+.pref-row {
+  display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+  padding: 10px 11px; border: 1px solid var(--border-strong); background: var(--panel);
+  margin-bottom: 10px; user-select: none;
+}
+.pref-row:hover { border-color: var(--ink); }
+.pref-row input { margin-top: 2px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.pref-row .pref-text { display: flex; flex-direction: column; gap: 4px; }
+.pref-row .pref-text b { font-size: 12px; color: var(--ink); font-weight: 650; }
+.pref-row .pref-text span:last-child { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
 /* ---------- widgets ---------- */
 button.btn {
   background: var(--panel); color: var(--ink); border: 1px solid var(--border-strong);

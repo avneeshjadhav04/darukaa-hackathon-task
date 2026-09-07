@@ -1,7 +1,7 @@
 import { AlertCircle, CheckCircle2, Database, Globe, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
-import { api } from './api/client';
+import { api, loadAutofetchPref, saveAutofetchPref } from './api/client';
 import ChatWindow from './components/ChatWindow';
 import IngestPanel from './components/IngestPanel';
 import ProviderForget from './components/ProviderForget';
@@ -13,6 +13,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [indexRefresh, setIndexRefresh] = useState(0);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [autofetch, setAutofetch] = useState(loadAutofetchPref);
   const toastTimer = useRef(null);
 
   const showToast = useCallback((msg, isErr = false) => {
@@ -53,6 +54,21 @@ export default function App() {
         </Section>
 
         <Section title="Web-Fetch Fallback" icon={Globe}>
+          <label className="pref-row">
+            <input
+              type="checkbox"
+              checked={autofetch}
+              onChange={(e) => { setAutofetch(e.target.checked); saveAutofetchPref(e.target.checked); }}
+            />
+            <span className="pref-text">
+              <b>Let the AI fetch web sources on its own</b>
+              <span>
+                When the knowledge index has no relevant evidence, the agent proposes and
+                ingests up to 2 public web pages (FAO/IPCC/IPBES-style sources) before
+                answering. First answer may take a few seconds longer.
+              </span>
+            </span>
+          </label>
           <p className="small-note">
             Same as "Fetch" in the Ingest section — paste any URL (FAO/IPCC/IPBES page, report
             landing page, etc.) and its readable text will be chunked, embedded and indexed.
@@ -80,7 +96,7 @@ export default function App() {
         </Section>
       </aside>
 
-      <ChatWindow providersReady={providersReady} onToast={showToast} refreshKey={historyRefresh} />
+      <ChatWindow providersReady={providersReady} onToast={showToast} refreshKey={historyRefresh} autofetch={autofetch} />
 
       {toast && (
         <div className={'toast' + (toast.isErr ? ' err' : '')}>

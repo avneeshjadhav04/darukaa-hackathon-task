@@ -147,13 +147,14 @@ def _apply_geo(slots: dict, lat: float | None, lon: float | None) -> dict:
 
 def process_turn(*, llm, store, message: str,
                  structured: dict | None = None,
-                 lat: float | None = None, lon: float | None = None) -> dict:
+                 lat: float | None = None, lon: float | None = None,
+                 autofetch: bool = True) -> dict:
     """Sync convenience wrapper: consume process_turn_stream, return the final event."""
     async def _run():
         result = None
         async for _kind, payload in process_turn_stream(
                 llm=llm, store=store, message=message,
-                structured=structured, lat=lat, lon=lon):
+                structured=structured, lat=lat, lon=lon, autofetch=autofetch):
             if _kind == "final":
                 result = payload
         if result is None:
@@ -163,9 +164,94 @@ def process_turn(*, llm, store, message: str,
     return asyncio.run(_run())
 
 
+# ---------- auto-fetch (agentic web fetch when the index is empty) ----------
+
+class FetchPlan(BaseModel):
+    urls: list[str] = Field(..., max_length=3,
+                            description="Up to 3 candidate page URLs, best first")
+    rationale: str = Field("", description="One line on what evidence is missing")
+
+
+_AUTOFETCH_PROMPT = ChatPromptTemplate.from_messages([
+    ("system",
+     "You are an environmental scientist. The knowledge index has no relevant evidence "
+     "for the user's question. Propose up to 2 publicly accessible, stable, DIRECT page "
+     "URLs (FAO, IPCC, IPBES, UNCCD, peer-reviewed report landing pages, government "
+     "datasets) most likely to contain quantitative evidence for the question. Rules: "
+     "real pages you are confident exist; http(s) only; no search-result pages, no PDF "
+     "deep-links unless canonical; prefer organisation landing/report pages."),
+    ("human", "Known context:\n{slots}\n\nQuestion:\n{message}"),
+])
+
+
+def _safe_url(url: str) -> bool:
+    """SSRF guard: http(s), public hosts only."""
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(url)
+        if p.scheme not in ("http", "https") or not p.hostname:
+            return False
+        host = p.hostname.lower()
+        if host in ("localhost", "0.0.0.0", "::1") or host.endswith(".local") or host.endswith(".internal"):
+            return False
+        import ipaddress
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return False
+        except ValueError:
+            pass  # hostname, not an IP literal
+        return True
+    except Exception:
+        return False
+
+
+def read_meta_dim() -> int | None:
+    """Embedding dimension recorded in the collection metadata (None if unset)."""
+    from .vectorstore import read_meta
+    try:
+        return read_meta().get("dim")
+    except Exception:  # noqa: BLE001 — metadata read is best-effort
+        return None
+
+
+async def _autofetch(*, llm, store, slots: dict, q: str, store_lock: asyncio.Lock,
+                     fetched_out: list):
+    """Sub-generator: propose URLs via LLM, ingest them through the normal pipeline.
+
+    Appends the fetched count to `fetched_out` (async generators cannot return values).
+    """
+    yield "status", "auto_fetching"
+    planner = _AUTOFETCH_PROMPT | llm.with_structured_output(FetchPlan)
+    try:
+        plan = await planner.ainvoke({"slots": format_slots(slots), "message": q})
+    except Exception:  # noqa: BLE001 — planner failure -> no fetch
+        fetched_out.append(0)
+        return
+    from . import ingest as ingest_mod
+    # dim for the index_docs record: reuse whatever the collection already recorded
+    # (embedding function lives in the store; the dim metadata row is informational)
+    dim = read_meta_dim()
+    fetched = 0
+    for url in plan.urls[:2]:
+        if not _safe_url(str(url)):
+            continue
+        try:
+            async with store_lock:
+                await asyncio.to_thread(
+                    ingest_mod.ingest_url, store, url=str(url), dim=dim or 0)
+            fetched += 1
+            if fetched >= 2:
+                break
+        except Exception:  # noqa: BLE001 — per-URL failure is non-fatal
+            continue
+    fetched_out.append(fetched)
+
+
 async def process_turn_stream(*, llm, store, message: str,
                               structured: dict | None = None,
-                              lat: float | None = None, lon: float | None = None):
+                              lat: float | None = None, lon: float | None = None,
+                              autofetch: bool = True):
     """Async generator: process one user turn, yielding events."""
     slots = load_slots()
     slots = _apply_structured_input(slots, structured)
@@ -212,6 +298,16 @@ async def process_turn_stream(*, llm, store, message: str,
     query = message + " " + " ".join(f"{k}={v}" for k, v in slots.items() if v)
     yield "status", "retrieving"
     docs = await asyncio.to_thread(store.similarity_search, query, 6) if store else []
+
+    # 3.0) agentic auto-fetch: nothing indexed -> propose & ingest web sources
+    if not docs and autofetch and store is not None:
+        store_lock = asyncio.Lock()
+        fetched_out: list[int] = []
+        async for _k, _p in _autofetch(llm=llm, store=store, slots=slots, q=query,
+                                       store_lock=store_lock, fetched_out=fetched_out):
+            yield _k, _p
+        if fetched_out and fetched_out[0]:
+            docs = await asyncio.to_thread(store.similarity_search, query, 6)
     context = "\n\n---\n\n".join(
         f"source: {d.metadata.get('source_name','?')}\n{d.page_content}" for d in docs
     )

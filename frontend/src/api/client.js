@@ -18,6 +18,20 @@ export function saveProviderFields(fields) {
   localStorage.setItem(LS_KEY, JSON.stringify(fields));
 }
 
+// ---------- auto-fetch preference (localStorage, non-secret) ----------
+const AUTOFETCH_KEY = 'dbc.autofetch.v1';
+
+export function loadAutofetchPref() {
+  // default ON — agent may fetch web sources when the index is empty
+  try {
+    const v = localStorage.getItem(AUTOFETCH_KEY);
+    return v === null ? true : v === 'true';
+  } catch { return true; }
+}
+export function saveAutofetchPref(on) {
+  try { localStorage.setItem(AUTOFETCH_KEY, String(!!on)); } catch { /* private mode */ }
+}
+
 // ---------- HTTP helpers ----------
 async function j(r) {
   const text = await r.text();
@@ -75,7 +89,7 @@ export const api = {
 };
 
 // ---------- SSE chat ----------
-export function streamChat({ message, structured, lat, lon, llm, embedding },
+export function streamChat({ message, structured, lat, lon, autofetch, llm, embedding },
                            { onStart, onStatus, onDelta, onFinal, onError, signal }) {
   const ctrl = new AbortController();
   const outerSignal = signal;
@@ -86,7 +100,7 @@ export function streamChat({ message, structured, lat, lon, llm, embedding },
       const r = await fetch(`${API}/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, structured, lat, lon, llm, embedding }),
+        body: JSON.stringify({ message, structured, lat, lon, autofetch, llm, embedding }),
         signal: ctrl.signal,
       });
       if (!r.ok) {

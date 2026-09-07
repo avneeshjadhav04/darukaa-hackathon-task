@@ -11,7 +11,7 @@ const SUGGESTIONS = [
   'My monoculture wheat yields are falling',
 ];
 
-export default function ChatWindow({ providersReady, onToast, refreshKey }) {
+export default function ChatWindow({ providersReady, onToast, refreshKey, autofetch = true }) {
   const [messages, setMessages] = useState([]);
   const [slots, setSlots] = useState({});
   const [busy, setBusy] = useState(false);
@@ -27,6 +27,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
     extracting: 'Extracting context variables…',
     clarifying: 'Formulating clarifying questions…',
     retrieving: 'Retrieving evidence…',
+    auto_fetching: 'Fetching web evidence…',
     reasoning: 'Reasoning across variables…',
     structuring: 'Structuring recommendations…',
   };
@@ -68,7 +69,7 @@ export default function ChatWindow({ providersReady, onToast, refreshKey }) {
       setStreamingText(accRef.current);
     };
     streamChat(
-      { message, structured, lat, lon, ...providerPayload() },
+      { message, structured, lat, lon, autofetch, ...providerPayload() },
       {
         onStatus: (s) => setStage(s),
         onDelta: (t) => {

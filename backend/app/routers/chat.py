@@ -21,6 +21,7 @@ class ChatIn(BaseModel):
     structured: dict | None = None        # structured (JSON) input
     lat: float | None = None
     lon: float | None = None
+    autofetch: bool = True                # agentic web-fetch when index is empty
     llm: ProviderFields | None = None
     embedding: ProviderFields | None = None
 
@@ -67,7 +68,8 @@ async def chat_stream(body: ChatIn):
         try:
             async for kind, payload in chat_engine.process_turn_stream(
                     llm=llm, store=store, message=body.message,
-                    structured=body.structured, lat=body.lat, lon=body.lon):
+                    structured=body.structured, lat=body.lat, lon=body.lon,
+                    autofetch=body.autofetch):
                 if kind == "status":
                     yield _sse({"type": "status", "stage": payload})
                 elif kind == "delta":
