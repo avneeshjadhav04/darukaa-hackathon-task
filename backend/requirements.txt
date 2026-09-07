@@ -1,0 +1,28 @@
+# Backend dependencies (pinned for reproducible Docker builds)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# LangChain core + OpenAI-compatible provider + Chroma
+langchain==0.3.14
+langchain-core==0.3.29
+langchain-openai==0.3.0
+langchain-chroma==0.2.0
+langchain-text-splitters==0.3.5
+
+# Vector store
+chromadb==0.5.23
+
+# Document parsing
+pypdf==5.1.0
+trafilatura==2.0.0
+beautifulsoup4==4.12.3
+
+# HTTP + env
+httpx==0.28.1
+pydantic==2.10.4
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+
+# SQLite access (async-friendly)
+aiosqlite==0.20.0

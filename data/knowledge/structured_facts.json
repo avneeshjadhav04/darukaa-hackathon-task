@@ -1,0 +1,158 @@
+[
+  {
+    "intervention": "Legume cover crops (e.g. vetch, clover, cowpea) in rotation or as understory",
+    "context": "Arable/cropped land; especially degraded soils; temperate to semi-arid with adequate rainfall",
+    "mechanism": "Biological N-fixation plus continuous root carbon inputs stimulate soil microbial biomass; root exudates and litter feed detrital food webs and support pollinator forage across seasons",
+    "metric_effects": [
+      "soil organic carbon: +15-25% over 2-3 years (0.3-0.6% absolute on depleted soils)",
+      "soil microbial biomass: +20-30%",
+      "pollinator abundance: up to +30-50% with flowering covers"
+    ],
+    "time_horizon": "medium",
+    "confidence": "high",
+    "source": "FAO (2017-2022) Voluntary Guidelines for Sustainable Soil Management; Poeplau & Don (2015) cover-crop SOC meta-analysis"
+  },
+  {
+    "intervention": "Agroforestry: intercrop annual crops with N-fixing/fruit trees (e.g. pigeonpea, Gliricidia, Faidherbia in sorghum/wheat systems)",
+    "context": "Semi-arid and sub-humid cropland; degraded or erosion-prone fields; smallholder or large farms",
+    "mechanism": "Deep tree roots redistribute water and nutrients (hydraulic lift), reduce evaporation via partial shade, drop nutrient-rich litter; structural complexity creates habitat for birds, insects and soil biota",
+    "metric_effects": [
+      "soil organic carbon: +0.3-1.0%/decade in topsoil",
+      "soil moisture conservation: +15-35% in dry spells",
+      "bird and arthropod richness: +40-100% vs monoculture"
+    ],
+    "time_horizon": "long",
+    "confidence": "high",
+    "source": "FAO Agroforestry guidelines; IPCC AR6 WGIII land-sector mitigation chapter"
+  },
+  {
+    "intervention": "Reduced/zero tillage combined with residue retention",
+    "context": "Continuously tilled cropland, most soil types; best where erosion or SOC loss is documented",
+    "mechanism": "Preserves soil structure and fungal networks, reduces oxidation of soil organic matter, keeps residue cover that buffers temperature and moisture extremes",
+    "metric_effects": [
+      "soil organic carbon: +5-10% in top 0-30cm over 5-10 years",
+      "water infiltration: +20-45%",
+      "soil erodibility: reduced 30-60%"
+    ],
+    "time_horizon": "medium",
+    "confidence": "high",
+    "source": "FAO conservation agriculture guidance; Lal (2004) & meta-analyses on SOC sequestration"
+  },
+  {
+    "intervention": "Field margin hedgerows, wildflower strips and riparian buffers",
+    "context": "Fragmented agricultural landscapes; intensified monocultures; areas near watercourses",
+    "mechanism": "Increases structural habitat diversity and connectivity; provides nesting and forage for pollinators and natural pest enemies; buffers filter nutrient/sediment runoff",
+    "metric_effects": [
+      "pollinator diversity/abundance: +50-70% within 1-2 years",
+      "natural pest control services: measurably increased, reducing pesticide need",
+      "habitat connectivity: reduced fragmentation at field scale"
+    ],
+    "time_horizon": "short",
+    "confidence": "high",
+    "source": "IPBES (2019) Global Assessment; Kleijn et al. (2015) CAP greening evaluation"
+  },
+  {
+    "intervention": "Diversify rotations: break monoculture with 3-4 crop sequences incl. legumes and deep-rooted species",
+    "context": "Monoculture cereal systems (e.g. continuous wheat); soils with declining fertility and rising pest pressure",
+    "mechanism": "Varied rooting depths and litter chemistries feed complementary soil biota; interrupts pest/disease cycles; legumes add biologically fixed nitrogen",
+    "metric_effects": [
+      "overall soil biodiversity: +10-40% (soil fauna, microbial diversity)",
+      "yield stability: +10-20% buffer in dry/heat years",
+      "system carbon footprint: reduced via lower synthetic N input"
+    ],
+    "time_horizon": "medium",
+    "confidence": "high",
+    "source": "IPCC AR6 WGII adaptation chapter; FAO crop diversification guidance"
+  },
+  {
+    "intervention": "Restore native grassland/shrubland patches and set aside degraded fallow for natural regeneration",
+    "context": "Semi-arid and dryland areas; degraded commons or marginal cropland; fragmented rangelands",
+    "mechanism": "Native climax vegetation rebuilds soil aggregate stability and mycorrhizal networks; provides refuges and corridors that reconnect isolated habitat fragments",
+    "metric_effects": [
+      "soil organic carbon: recovery toward 60-80% of undegraded reference",
+      "native plant richness: +20-60% over 3-10 years",
+      "habitat fragmentation: reduced patch isolation"
+    ],
+    "time_horizon": "long",
+    "confidence": "medium",
+    "source": "IPBES Land Degradation and Restoration Assessment (2018); UN Decade on Ecosystem Restoration framework"
+  },
+  {
+    "intervention": "Water harvesting + infiltration structures (swales, zai pits, check dams, drip irrigation upscaling)",
+    "context": "Rainfall-limited (semi-arid) cropland with seasonal drought stress",
+    "mechanism": "Concentrates scarce rainfall in the root zone and recharges soil moisture, extending the growing window for plants, soil microbes and dependent fauna; reduces climate-driven mortality",
+    "metric_effects": [
+      "plant water availability: +15-40% in dry years",
+      "crop and cover survival during drought: substantially increased",
+      "enables long-term SOC gains by sustaining biomass production"
+    ],
+    "time_horizon": "short",
+    "confidence": "high",
+    "source": "FAO water-smart agriculture; IPCC AR6 WGII water-land-climate interactions"
+  },
+  {
+    "intervention": "Compost / manure / biochar amendment",
+    "context": "Soils with very low organic matter (<1% SOC), most climates",
+    "mechanism": "Direct carbon and nutrient injection; stable biochar carbon accumulates and hosts microbial habitat; organic inputs feed detrital food webs and improve nutrient cycling",
+    "metric_effects": [
+      "soil organic carbon: +10-30% over 1-5 years (biochar higher, longer-lasting)",
+      "microbial biomass and diversity: +20-50%",
+      "nutrient use efficiency: +10-25%"
+    ],
+    "time_horizon": "short",
+    "confidence": "high",
+    "source": "FAO soil organic carbon management guidelines; Lehmann & Joseph (2015) biochar review"
+  },
+  {
+    "intervention": "Integrated pest management, agri-environment schemes, and reduced biocide load",
+    "context": "All farmland where pesticide overuse is documented (declining insect and bird indicators)",
+    "mechanism": "Reduces direct mortality of non-target species, including pollinators, aquatic invertebrates and soil biota; allows recovery of populations that provide pest control and pollination services",
+    "metric_effects": [
+      "insect diversity/abundance: recovery of 30-70% over 2-5 years",
+      "farmland bird indicator recovery in scheme areas",
+      "soil microarthropod density: +30-60%"
+    ],
+    "time_horizon": "medium",
+    "confidence": "high",
+    "source": "IPBES Pollinators Assessment (2016); IPBES Global Assessment (2019)"
+  },
+  {
+    "intervention": "Managed grazing or seasonal rest (rotational/holistic) of rangelands",
+    "context": "Overgrazed grasslands and savannas with declining grass cover and soil compaction",
+    "mechanism": "Allows plants to rebuild root reserves and seed banks, improves soil infiltration and microbial recovery, increases habitat heterogeneity for wildlife",
+    "metric_effects": [
+      "soil organic carbon: +0.2-0.5%/decade",
+      "grassland plant diversity: +20-50%",
+      "soil infiltration and drought resilience: improved"
+    ],
+    "time_horizon": "medium",
+    "confidence": "medium",
+    "source": "IPCC AR6 WGII rangeland systems; FAO sustainable rangeland management guidance"
+  },
+  {
+    "intervention": "Afforestation/reforestation with diverse native species on degraded land",
+    "context": "Deforested watersheds, degraded hillsides and mining/agricultural abandonment",
+    "mechanism": "Re-establishes forest cover and complex 3-D structure, accelerating soil carbon accumulation, hydrological regulation and colonisation by forest fauna",
+    "metric_effects": [
+      "soil organic carbon: +20-30% over decades",
+      "rainfall retention/infiltration: improved; runoff reduced",
+      "forest species richness: long-term increase (decadal)"
+    ],
+    "time_horizon": "long",
+    "confidence": "high",
+    "source": "IPCC AR6 WGII ecosystem-based adaptation; FAO Global Forest Resources Assessment (2020)"
+  },
+  {
+    "intervention": "Control deforestation drivers and pollution discharge; enforce buffer/protection zones",
+    "context": "Frontier regions with active clearing, mining or untreated effluent",
+    "mechanism": "Removes the direct drivers of habitat loss and toxicity; protecting remnant habitat is more cost-effective than restoring it later",
+    "metric_effects": [
+      "habitat loss rate: immediate reduction",
+      "water/sediment quality downstream: improved",
+      "species persistence in remnants: stabilised"
+    ],
+    "time_horizon": "short",
+    "confidence": "high",
+    "source": "IPBES Global Assessment (2019) Drivers of biodiversity loss; IPCC AR6 WGII"
+  }
+]
