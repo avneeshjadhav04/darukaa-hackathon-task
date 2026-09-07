@@ -13,22 +13,42 @@ export default function Composer({ disabled, onSend, initialPrompt }) {
   }, null, 2));
   const [lat, setLat] = useState('');
   const [lon, setLon] = useState('');
+  const hasGeoInput = showGeo && (lat.trim() !== '' || lon.trim() !== '');
 
   // consume a suggestion prompt if the parent hands one down
   useEffect(() => {
     if (initialPrompt) setText(initialPrompt);
   }, [initialPrompt]);
 
+  function geoValue() {
+    if (!showGeo) return null;
+    const hasLat = lat.trim() !== '';
+    const hasLon = lon.trim() !== '';
+    if (!hasLat && !hasLon) return null;
+    if (!hasLat || !hasLon) return { error: 'Enter both latitude and longitude.' };
+    const la = parseFloat(lat);
+    const lo = parseFloat(lon);
+    if (isNaN(la) || isNaN(lo)) return { error: 'Latitude and longitude must be numbers.' };
+    if (la < -90 || la > 90) return { error: 'Latitude must be between -90 and 90.' };
+    if (lo < -180 || lo > 180) return { error: 'Longitude must be between -180 and 180.' };
+    return { lat: la, lon: lo };
+  }
+
   function send() {
-    if (!text.trim() && !showStructured) return;
+    const geo = geoValue();
+    if (geo?.error) { alert(geo.error); return; }
+    const hasText = !!text.trim();
+    const hasStructured = showStructured && !!structured.trim();
+    if (!hasText && !hasStructured && !geo) return;
     let s = null;
-    if (showStructured && structured.trim()) {
+    if (hasStructured) {
       try { s = JSON.parse(structured); }
       catch { alert('Structured input is not valid JSON'); return; }
     }
-    const g = (showGeo && lat && lon) ? { lat: parseFloat(lat), lon: parseFloat(lon) } : {};
-    if (showGeo && (isNaN(g.lat) || isNaN(g.lon))) { alert('lat/lon must be numbers'); return; }
-    onSend({ message: text.trim() || (s ? '[structured input provided]' : ''), structured: s, ...g });
+    const fallback = s && geo ? '[structured + geo input provided]'
+      : s ? '[structured input provided]'
+      : '[geo coordinates provided]';
+    onSend({ message: text.trim() || fallback, structured: s, ...(geo || {}) });
     setText('');
   }
 
@@ -46,11 +66,16 @@ export default function Composer({ disabled, onSend, initialPrompt }) {
         <div className="details-panel">
           <div className="geo">
             <div className="field flex" style={{ marginBottom: 0 }}>
-              <input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="latitude (e.g. 28.61)" />
+              <input type="number" step="any" min="-90" max="90" value={lat}
+                     onChange={(e) => setLat(e.target.value)} placeholder="latitude (-90…90, e.g. 28.61)" />
             </div>
             <div className="field flex" style={{ marginBottom: 0 }}>
-              <input value={lon} onChange={(e) => setLon(e.target.value)} placeholder="longitude (e.g. 77.20)" />
+              <input type="number" step="any" min="-180" max="180" value={lon}
+                     onChange={(e) => setLon(e.target.value)} placeholder="longitude (-180…180, e.g. 77.20)" />
             </div>
+          </div>
+          <div className="hint" style={{ marginTop: 5 }}>
+            Optional. Coordinates fill the region context — you can send geo alone, with a message, or with structured JSON.
           </div>
         </div>
       )}
@@ -75,7 +100,8 @@ export default function Composer({ disabled, onSend, initialPrompt }) {
             </label>
           </div>
         </div>
-        <button className="send-btn" onClick={send} disabled={disabled || (!text.trim() && !showStructured)}
+        <button className="send-btn" onClick={send}
+                disabled={disabled || (!text.trim() && !showStructured && !hasGeoInput)}
                 title="Send">
           <SendHorizonal size={19} />
         </button>
